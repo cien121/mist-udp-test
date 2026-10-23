@@ -1,0 +1,71 @@
+name: Mist UDP Test Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
+
+      - name: Install NDK
+        run: |
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            --install "ndk;25.2.9519653" || \
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            --channel=0 --install "ndk;25.2.9519653"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Install gomobile
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          export PATH=$PATH:~/go/bin
+          gomobile init
+
+      - name: Build misttest AAR with gomobile
+        run: |
+          export PATH=$PATH:~/go/bin
+          cd gomobile
+          # Lab tags required for RandomCiphertextCodec
+          gomobile bind -tags mist_unsafe_initial -target android/arm64 -o ../app/libs/misttest.aar .
+          ls -lh ../app/libs/misttest.aar
+
+      - name: Build APK with Gradle
+        run: |
+          curl -fSL -o /tmp/gradle.zip \
+            https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          unzip -q /tmp/gradle.zip -d /tmp
+          export PATH=/tmp/gradle-8.7/bin:$PATH
+          gradle assembleDebug --stacktrace
+
+      - name: Sign APK (debug)
+        run: |
+          # Use default debug keystore
+          ls -lh app/build/outputs/apk/debug/*.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: mist-udp-test-debug
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 7
