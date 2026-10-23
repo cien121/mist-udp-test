@@ -26,8 +26,6 @@ jobs:
       - name: Install NDK
         run: |
           echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
-            --install "ndk;29.0.14206865" || \
-          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
             --channel=0 --install "ndk;29.0.14206865"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> $GITHUB_ENV
 
@@ -45,17 +43,19 @@ jobs:
       - name: Build misttest AAR with gomobile
         run: |
           export PATH=$PATH:~/go/bin
+          export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865
           cd gomobile
-          # Lab tags required for RandomCiphertextCodec
-          export PATH=$PATH:~/go/bin
-echo "=== gomobile version ==="
-gomobile version
-echo "=== NDK ==="
-echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
-ls $ANDROID_NDK_HOME 2>&1 | head -5
-echo "=== Building ==="
-gomobile bind -x -tags mist_unsafe_initial -target android/arm64 -o ../app/libs/misttest.aar . 2>&1 | head -100
-          ls -lh ../app/libs/misttest.aar
+          echo "=== Diagnostics ==="
+          go version
+          gomobile version 2>&1 || true
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
+          ls "$ANDROID_NDK_HOME" 2>&1 | head -3
+          echo "=== Go mod tidy ==="
+          go mod tidy 2>&1 | head -20 || true
+          echo "=== Building AAR ==="
+          gomobile bind -tags mist_unsafe_initial -target android/arm64 -o ../app/libs/misttest.aar . 2>&1 | tail -50
+          echo "=== Result ==="
+          ls -lh ../app/libs/misttest.aar 2>&1 || echo "AAR NOT CREATED"
 
       - name: Build APK with Gradle
         run: |
@@ -64,11 +64,6 @@ gomobile bind -x -tags mist_unsafe_initial -target android/arm64 -o ../app/libs/
           unzip -q /tmp/gradle.zip -d /tmp
           export PATH=/tmp/gradle-8.7/bin:$PATH
           gradle assembleDebug --stacktrace
-
-      - name: Sign APK (debug)
-        run: |
-          # Use default debug keystore
-          ls -lh app/build/outputs/apk/debug/*.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
