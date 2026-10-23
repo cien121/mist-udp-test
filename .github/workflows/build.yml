@@ -52,6 +52,9 @@ jobs:
           ls "$ANDROID_NDK_HOME" 2>&1 | head -3
           echo "=== Go mod tidy ==="
           go mod tidy 2>&1 | head -20 || true
+          echo "=== Go build check ==="
+          go build -tags mist_unsafe_initial ./... 2>&1 | head -30 || true
+          go mod tidy 2>&1 | head -20 || true
           echo "=== Building AAR ==="
           gomobile bind -tags mist_unsafe_initial -target android/arm64 -o ../app/libs/misttest.aar . 2>&1 | tail -50
           echo "=== Result ==="
