@@ -26,10 +26,10 @@ jobs:
       - name: Install NDK
         run: |
           echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
-            --install "ndk;25.2.9519653" || \
+            --install "ndk;29.0.14206865" || \
           echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
-            --channel=0 --install "ndk;25.2.9519653"
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
+            --channel=0 --install "ndk;29.0.14206865"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> $GITHUB_ENV
 
       - name: Set up Go
         uses: actions/setup-go@v5
