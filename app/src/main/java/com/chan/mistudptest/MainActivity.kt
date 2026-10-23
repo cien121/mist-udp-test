@@ -6,7 +6,6 @@ import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import misttest.Misttest
 import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
@@ -40,9 +39,13 @@ class MainActivity : AppCompatActivity() {
 
             thread {
                 try {
-                    val server = serverInput.text.toString().trim()
-                    appendLog("Calling Go handshake...")
-                    val result = Misttest.runHandshake(server, testCid, testKey)
+                    val serverStr = serverInput.text.toString().trim()
+                    val parts = serverStr.split(":")
+                    val host = parts[0]
+                    val port = parts.getOrNull(1)?.toIntOrNull() ?: 1443
+
+                    appendLog("Running handshake...")
+                    val result = MistUdpClient.runHandshake(host, port, testCid, testKey)
                     appendLog(result.log)
                     appendLog(if (result.success) ">>> SUCCESS <<<" else ">>> FAILED <<<")
                 } catch (e: Exception) {
