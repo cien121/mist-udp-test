@@ -23,43 +23,6 @@ jobs:
         with:
           packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
 
-      - name: Install NDK
-        run: |
-          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
-            --channel=0 --install "ndk;29.0.14206865"
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> $GITHUB_ENV
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.24"
-
-      - name: Install gomobile
-        run: |
-          go install golang.org/x/mobile/cmd/gomobile@latest
-          export PATH=$PATH:~/go/bin
-          gomobile init
-
-      - name: Build misttest AAR with gomobile
-        run: |
-          export PATH=$PATH:~/go/bin
-          export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865
-          cd gomobile
-          echo "=== Diagnostics ==="
-          go version
-          gomobile version 2>&1 || true
-          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
-          ls "$ANDROID_NDK_HOME" 2>&1 | head -3
-          echo "=== Go mod tidy ==="
-          go mod tidy 2>&1 | head -20 || true
-          echo "=== Go build check ==="
-          go build -tags mist_unsafe_initial ./... 2>&1 | head -30 || true
-          go mod tidy 2>&1 | head -20 || true
-          echo "=== Building AAR ==="
-          gomobile bind -tags mist_unsafe_initial -target android/arm64 -o ../app/libs/misttest.aar . 2>&1 | tail -50
-          echo "=== Result ==="
-          ls -lh ../app/libs/misttest.aar 2>&1 || echo "AAR NOT CREATED"
-
       - name: Build APK with Gradle
         run: |
           curl -fSL -o /tmp/gradle.zip \
