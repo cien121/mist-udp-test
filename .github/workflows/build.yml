@@ -47,7 +47,14 @@ jobs:
           export PATH=$PATH:~/go/bin
           cd gomobile
           # Lab tags required for RandomCiphertextCodec
-          gomobile bind -tags mist_unsafe_initial -target android/arm64 -o ../app/libs/misttest.aar .
+          export PATH=$PATH:~/go/bin
+echo "=== gomobile version ==="
+gomobile version
+echo "=== NDK ==="
+echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
+ls $ANDROID_NDK_HOME 2>&1 | head -5
+echo "=== Building ==="
+gomobile bind -x -tags mist_unsafe_initial -target android/arm64 -o ../app/libs/misttest.aar . 2>&1 | head -100
           ls -lh ../app/libs/misttest.aar
 
       - name: Build APK with Gradle
